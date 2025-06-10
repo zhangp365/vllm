@@ -815,6 +815,7 @@ class Qwen2_5_VLMultiModalProcessor(Qwen2VLMultiModalProcessor):
             second_per_grid_ts=MultiModalFieldConfig.batched("video"),
         )
 
+import time
 
 @MULTIMODAL_REGISTRY.register_processor(
     Qwen2_5_VLMultiModalProcessor,
@@ -1019,7 +1020,7 @@ class Qwen2_5_VLForConditionalGeneration(nn.Module, SupportsMultiModal,
 
     def get_multimodal_embeddings(
             self, **kwargs: object) -> Optional[MultiModalEmbeddings]:
-
+        start_time = time.time()
         mm_input_by_modality = self._parse_and_validate_multimodal_inputs(
             **kwargs)
         if not mm_input_by_modality:
@@ -1039,6 +1040,8 @@ class Qwen2_5_VLForConditionalGeneration(nn.Module, SupportsMultiModal,
             if modality == "video":
                 video_embeddings = self._process_video_input(multimodal_input)
                 multimodal_embeddings += video_embeddings
+
+        logger.info(f"get_multimodal_embeddings time: {time.time() - start_time}")
         return multimodal_embeddings
 
     def get_input_embeddings(
@@ -1132,13 +1135,15 @@ class Qwen2_5_VLForConditionalGeneration(nn.Module, SupportsMultiModal,
                     image_input=image_input,
                     video_input=video_input)
                 input_ids = None
-
+        start_time = time.time()
+        logger.info(f"start forward pass")
         hidden_states = self.language_model.model(
             input_ids=input_ids,
             positions=positions,
             intermediate_tensors=intermediate_tensors,
             inputs_embeds=inputs_embeds,
         )
+        logger.info(f"forward pass time: {time.time() - start_time}")
         return hidden_states
 
     def compute_logits(
